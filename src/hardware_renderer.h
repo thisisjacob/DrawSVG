@@ -6,6 +6,7 @@
 #include "CMU462.h"
 #include "svg_renderer.h"
 #include "GLFW/glfw3.h"
+#include <algorithm>
 
 namespace CMU462 {
 

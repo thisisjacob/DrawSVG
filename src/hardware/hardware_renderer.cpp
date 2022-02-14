@@ -243,27 +243,73 @@ void HardwareRenderer::draw_group( Group& group ) {
 
 void HardwareRenderer::rasterize_point(float x, float y, Color color) {
   
-  // Task 1: 
-  // Implement point rasterization
+    // Task 1: 
+    // Implement point rasterization
+    // Moves to the closest screen point, where each sampling point for a screen pixel is at a mid integer point
+    int screenX = (int)floor(x);
+    int screenY = (int)floor(y);
 
+    // If the screen point is outside of bounds, then do not draw the point
+    if ((screenX < 0 || screenX >= context_w) || (screenY < 0 || screenY >= context_h))
+        return;
+
+    glBegin(GL_POINTS);
+    glColor4f(color.r, color.g, color.b, color.a);
+    glVertex2f(x, y);
+    glEnd();
 }
 
 void HardwareRenderer::rasterize_line(float x0, float y0,
                                       float x1, float y1, 
                                       Color color) {
 
-  // Task 1: 
-  // Implement line rasterization
-
+    // Task 1: 
+    // Implement line rasterization
+    // Moves to the closest screen point, where each sampling point for a screen pixel is at a mid integer point
+    int screenX0 = (int)floor(x0);
+    int screenX1 = (int)floor(x1);
+    int screenY0 = (int)floor(y0);
+    int screenY1 = (int)floor(y1);
+    // Ensure each point is within the screen bounds
+    clamp(screenX0, 0, (int)context_w);
+    clamp(screenX1, 0, (int)context_w);
+    clamp(screenY0, 0, (int)context_h);
+    clamp(screenY1, 0, (int)context_h);
+    // Draw line
+    glBegin(GL_LINES);
+    glColor4f(color.r, color.g, color.b, color.a);
+    glVertex2f(screenX0, screenY0);
+    glVertex2f(screenX1, screenY1);
+    glEnd();
 }
 
 void HardwareRenderer::rasterize_triangle(float x0, float y0,
                                           float x1, float y1, 
                                           float x2, float y2, 
                                           Color color) {
-  // Task 1: 
-  // Implement triangle rasterization
+    // Task 1: 
+    // Implement triangle rasterization
+    // Move to closest screen point
+    int screenX0 = (int)floor(x0);
+    int screenX1 = (int)floor(x1);
+    int screenX2 = (int)floor(x2);
+    int screenY0 = (int)floor(y0);
+    int screenY1 = (int)floor(y1);
+    int screenY2 = (int)floor(y2);
+    // Ensure each point is within the screen bounds
+    clamp(screenX0, 0, (int)context_w);
+    clamp(screenX1, 0, (int)context_w);
+    clamp(screenX2, 0, (int)context_w);
+    clamp(screenY0, 0, (int)context_h);
+    clamp(screenY1, 0, (int)context_h);
+    clamp(screenY2, 0, (int)context_h);
 
+    glBegin(GL_TRIANGLES);
+    glColor4f(color.r, color.g, color.b, color.a);
+    glVertex2f(screenX0, screenY0);
+    glVertex2f(screenX1, screenY1);
+    glVertex2f(screenX2, screenY2);
+    glEnd();
 }
 
 void HardwareRenderer::rasterize_image(float x0, float y0,
