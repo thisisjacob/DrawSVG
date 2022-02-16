@@ -242,8 +242,41 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
                                           float x1, float y1,
                                           Color color) {
 
-  // Task 2: 
-  // Implement line rasterization
+    // Task 2: 
+    // Implement line rasterization
+    // Assign pixel to closest sample point
+    
+    // Get proper point ordering
+    if (x0 > x1) {
+        int temp = x1;
+        x1 = x0;
+        x0 = temp;
+        temp = y1;
+        y1 = y0;
+        y0 = temp;
+    }
+
+    // Line drawing algorithm
+    // TODO: Handle absolute slopes > 1.0
+    int deltaX = x1 - x0;
+    int deltaY = y1 - y0;
+    float slope = (float)deltaY / (float)deltaX;
+    // Determine which dimension to move along dependent variable
+    int iterStep = 1;
+    if (deltaY < 0) {
+        iterStep = -1;
+        deltaY *= -1;
+    }
+    int epsilon = 2 * deltaY - deltaX;
+    int y = y0;
+    for (int x = x0; x <= x1; x++) {
+        rasterize_point(x, y, color);
+        if (epsilon > 0) {
+            y += iterStep;
+            epsilon -= 2 * deltaX;
+        }
+        epsilon += 2 * deltaY;
+    }
 }
 
 void SoftwareRendererImp::rasterize_triangle( float x0, float y0,

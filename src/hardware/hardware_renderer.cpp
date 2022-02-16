@@ -271,10 +271,10 @@ void HardwareRenderer::rasterize_line(float x0, float y0,
     int screenY0 = (int)floor(y0);
     int screenY1 = (int)floor(y1);
     // Ensure each point is within the screen bounds
-    clamp(screenX0, 0, (int)context_w);
-    clamp(screenX1, 0, (int)context_w);
-    clamp(screenY0, 0, (int)context_h);
-    clamp(screenY1, 0, (int)context_h);
+    clamp(screenX0, 0, (int)context_w - 1);
+    clamp(screenX1, 0, (int)context_w - 1);
+    clamp(screenY0, 0, (int)context_h - 1);
+    clamp(screenY1, 0, (int)context_h - 1);
     // Draw line
     glBegin(GL_LINES);
     glColor4f(color.r, color.g, color.b, color.a);
@@ -297,12 +297,12 @@ void HardwareRenderer::rasterize_triangle(float x0, float y0,
     int screenY1 = (int)floor(y1);
     int screenY2 = (int)floor(y2);
     // Ensure each point is within the screen bounds
-    clamp(screenX0, 0, (int)context_w);
-    clamp(screenX1, 0, (int)context_w);
-    clamp(screenX2, 0, (int)context_w);
-    clamp(screenY0, 0, (int)context_h);
-    clamp(screenY1, 0, (int)context_h);
-    clamp(screenY2, 0, (int)context_h);
+    clamp(screenX0, 0, (int)context_w - 1);
+    clamp(screenX1, 0, (int)context_w - 1);
+    clamp(screenX2, 0, (int)context_w - 1);
+    clamp(screenY0, 0, (int)context_h - 1);
+    clamp(screenY1, 0, (int)context_h - 1);
+    clamp(screenY2, 0, (int)context_h - 1);
 
     glBegin(GL_TRIANGLES);
     glColor4f(color.r, color.g, color.b, color.a);
