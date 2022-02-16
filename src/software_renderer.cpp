@@ -238,15 +238,22 @@ void SoftwareRendererImp::rasterize_point( float x, float y, Color color ) {
 
 }
 
+// Rasterize a line using Bresenham's algorithm
 void SoftwareRendererImp::rasterize_line( float x0, float y0,
                                           float x1, float y1,
                                           Color color) {
 
     // Task 2: 
-    // Implement line rasterization
-    // Assign pixel to closest sample point
-    
-    // Get proper point ordering
+    // Determine slope, choose which rasterization version to use
+    float slope = (float)(y1 - y0) / (float)(x1 - x0);
+    if (abs(slope) < 1.0)
+        rasterize_line_low_slope(x0, y0, x1, y1, color);
+    else
+        rasterize_line_high_slope(x0, y0, x1, y1, color);
+}
+
+// Rasterizes when absolute line slope <= 1.0
+void SoftwareRendererImp::rasterize_line_low_slope(float x0, float y0, float x1, float y1, Color color) {
     if (x0 > x1) {
         int temp = x1;
         x1 = x0;
@@ -255,13 +262,8 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
         y1 = y0;
         y0 = temp;
     }
-
-    // Line drawing algorithm
-    // TODO: Handle absolute slopes > 1.0
     int deltaX = x1 - x0;
     int deltaY = y1 - y0;
-    float slope = (float)deltaY / (float)deltaX;
-    // Determine which dimension to move along dependent variable
     int iterStep = 1;
     if (deltaY < 0) {
         iterStep = -1;
@@ -278,6 +280,37 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
         epsilon += 2 * deltaY;
     }
 }
+
+// Rasterizes when absolute line slope > 1.0
+void SoftwareRendererImp::rasterize_line_high_slope(float x0, float y0, float x1, float y1, Color color) {
+    if (y0 > y1) {
+        int temp = y1;
+        y1 = y0;
+        y0 = temp;
+        temp = x1;
+        x1 = x0;
+        x0 = temp;
+    }
+    int deltaX = x1 - x0;
+    int deltaY = y1 - y0;
+    // Use x as the dependant variable
+    int iterStep = 1;
+    if (deltaX < 0) {
+        iterStep = -1;
+        deltaX *= -1;
+    }
+    int epsilon = 2 * deltaX - deltaY;
+    int x = x0;
+    for (int y = y0; y <= y1; y++) {
+        rasterize_point(x, y, color);
+        if (epsilon > 0) {
+            x += iterStep;
+            epsilon -= 2 * deltaY;
+        }
+        epsilon += 2 * deltaX;
+    }
+}
+
 
 void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
                                               float x1, float y1,

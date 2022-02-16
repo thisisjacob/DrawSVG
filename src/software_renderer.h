@@ -119,6 +119,10 @@ class SoftwareRendererImp : public SoftwareRenderer {
                        float x1, float y1,
                        Color color);
 
+  void rasterize_line_low_slope(float x0, float y0, float x1, float y1, Color color);
+
+  void rasterize_line_high_slope(float x0, float y0, float x1, float y1, Color color);
+
   // rasterize a triangle
   void rasterize_triangle( float x0, float y0,
                            float x1, float y1,
@@ -191,6 +195,10 @@ class SoftwareRendererRef : public SoftwareRenderer {
   void rasterize_line( float x0, float y0,
                        float x1, float y1,
                        Color color);
+
+  void rasterize_line_high_slope(float x0, float y0, float x1, float y1, Color color);
+
+  void rasterize_line_low_sope(float x0, float y0, float x1, float y1, Color color);
 
   // rasterize a triangle
   void rasterize_triangle( float x0, float y0,
