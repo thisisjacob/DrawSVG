@@ -4,3 +4,16 @@ build/
 # Useless files
 .DS_STORE
 *.swp
+/.vs/CMake Overview
+/.vs/VSWorkspaceState.json
+/.vs/slnx.sqlite
+/.vs/ProjectSettings.json
+/.vs/cmake.db
+/.vs/DrawSVG/v17/workspaceFileList.bin
+/.vs/DrawSVG/v17/ipch/AutoPCH/71d948674f498006/DRAWSVG.ipch
+/.vs/DrawSVG/v17/ipch/AutoPCH/71d948674f498006
+/.vs/DrawSVG/v17/Browse.VC.db
+/.vs/DrawSVG/v17/.suo
+/.vs/DrawSVG/v17
+/.vs/DrawSVG/project-colors.json
+/.vs/DrawSVG

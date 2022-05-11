@@ -311,15 +311,46 @@ void SoftwareRendererImp::rasterize_line_high_slope(float x0, float y0, float x1
     }
 }
 
+// Pineda's edge function
+// (A Parallel Algorithm for Polygon Rasterization, 1988)
+// pX and pY are values of the point to test
+// (x0, y0) and (x1, y1) are the vertices of the triangle edge to use in the test
+bool edgeFunction(float x0, float y0, float x1, float y1, float xP, float yP) {
+    // Triangle vertices are defined in clockwise order, which requires testing for results <= 0
+    return ((xP - x0) * (y1 - y0) - (yP - y0) * (x1 - x0)) <= 0.0;
+}
 
 void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
                                               float x1, float y1,
                                               float x2, float y2,
                                               Color color ) {
-  // Task 3: 
-  // Implement triangle rasterization
+    // Task 3: 
+    // Implement triangle rasterization
+    // Create bounding box
+    // Move by 0.5 to sample mid pixels
+    float xMin = std::floor(std::min({ x0, x1, x2 })) + 0.5;
+    float yMin = std::floor(std::min({ y0, y1, y2 })) + 0.5;
+    float xMax = std::ceil(std::max({ x0, x1, x2 })) + 0.5;
+    float yMax = std::ceil(std::max({ y0, y1, y2 })) + 0.5;
 
+
+
+    // For testing points within the triangle's bounding box
+    for (float y = yMin; y <= yMax; y++) {
+        for (float x = xMin; x <= xMax; x++) {
+            bool pointInside = true;
+            // Test point against all three edges
+            pointInside &= edgeFunction(x0, y0, x1, y1, x, y);
+            pointInside &= edgeFunction(x1, y1, x2, y2, x, y);
+            pointInside &= edgeFunction(x2, y2, x0, y0, x, y);
+
+            if (pointInside)
+                rasterize_point(x, y, color);
+        }
+    }
 }
+
+
 
 void SoftwareRendererImp::rasterize_image( float x0, float y0,
                                            float x1, float y1,
