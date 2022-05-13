@@ -79,7 +79,9 @@ class SoftwareRendererImp : public SoftwareRenderer {
                           size_t width, size_t height );
 
  private:
-
+  std::vector<Color> sample_buffer;
+  size_t sampleWidth;
+  size_t sampleHeight;
   // Primitive Drawing //
 
   // Draws an SVG element
@@ -110,6 +112,7 @@ class SoftwareRendererImp : public SoftwareRenderer {
   void draw_group( Group& group );
 
   // Rasterization //
+  void sample_point(float x, float y, Color color);
 
   // rasterize a point
   void rasterize_point( float x, float y, Color color );

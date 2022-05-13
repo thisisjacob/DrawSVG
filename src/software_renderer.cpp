@@ -45,7 +45,9 @@ void SoftwareRendererImp::set_sample_rate( size_t sample_rate ) {
   // Task 4: 
   // You may want to modify this for supersampling support
   this->sample_rate = sample_rate;
-
+  sampleHeight = target_h * sample_rate;
+  sampleWidth = target_w * sample_rate;
+  sample_buffer = vector<Color>(sampleHeight * sampleWidth, Color(1.0, 1.0, 1.0, 1.0));
 }
 
 void SoftwareRendererImp::set_render_target( unsigned char* render_target,
@@ -56,7 +58,10 @@ void SoftwareRendererImp::set_render_target( unsigned char* render_target,
   this->render_target = render_target;
   this->target_w = width;
   this->target_h = height;
-
+  // Set sampler buffer
+  sampleHeight = target_h * sample_rate;
+  sampleWidth = target_w * sample_rate;
+  sample_buffer = std::vector<Color>(sampleHeight * sampleWidth, Color(1.0, 1.0, 1.0, 1.0));
 }
 
 void SoftwareRendererImp::draw_element( SVGElement* element ) {
@@ -217,32 +222,51 @@ void SoftwareRendererImp::draw_group( Group& group ) {
 
 // Rasterization //
 
+// Samples a single point in the sample buffer
+void SoftwareRendererImp::sample_point(float x, float y, Color color) {
+    // Find screenspace coordinates
+    float sx = x / target_w;
+    float sy = y / target_h;
+
+    // check bounds
+    if (sx < 0 || sx >= 1.0) return;
+    if (sy < 0 || sy >= 1.0) return;
+
+    // Find sample buffer device coordinates, fill sample pixel
+    int sampX = sx * (float)sampleWidth;
+    int sampY = sy * (float)sampleHeight;
+    sample_buffer[sampX + (sampY * sampleWidth)] = color;
+}
+
 // The input arguments in the rasterization functions 
 // below are all defined in screen space coordinates
 
 void SoftwareRendererImp::rasterize_point( float x, float y, Color color ) {
 
-  // fill in the nearest pixel
-  int sx = (int) floor(x);
-  int sy = (int) floor(y);
+  // Find screenspace coordinates
+  int px = floor(x);
+  int py = floor(y);
 
   // check bounds
-  if ( sx < 0 || sx >= target_w ) return;
-  if ( sy < 0 || sy >= target_h ) return;
+  if (px < 0 || px >= target_w) return;
+  if (py < 0 || py >= target_h) return;
 
-  // fill sample - NOT doing alpha blending!
-  render_target[4 * (sx + sy * target_w)    ] = (uint8_t) (color.r * 255);
-  render_target[4 * (sx + sy * target_w) + 1] = (uint8_t) (color.g * 255);
-  render_target[4 * (sx + sy * target_w) + 2] = (uint8_t) (color.b * 255);
-  render_target[4 * (sx + sy * target_w) + 3] = (uint8_t) (color.a * 255);
+  int sampleX = sample_rate * px;
+  int sampleY = sample_rate * py;
 
+  // Fill sample_rate * sample_rate block associated with pixel in sample buffer
+  for (int y = sampleY; y < sampleY + sample_rate; y++) {
+      for (int x = sampleX; x < sampleX + sample_rate; x++) {
+          sample_buffer[x + (y * sampleWidth)] = color;
+      }
+  }
+  
 }
 
 // Rasterize a line using Bresenham's algorithm
 void SoftwareRendererImp::rasterize_line( float x0, float y0,
                                           float x1, float y1,
                                           Color color) {
-
     // Task 2: 
     // Determine slope, choose which rasterization version to use
     float slope = (float)(y1 - y0) / (float)(x1 - x0);
@@ -264,14 +288,14 @@ void SoftwareRendererImp::rasterize_line_low_slope(float x0, float y0, float x1,
     }
     int deltaX = x1 - x0;
     int deltaY = y1 - y0;
-    int iterStep = 1;
+    float iterStep = 1.0;
     if (deltaY < 0) {
-        iterStep = -1;
+        iterStep = -1.0;
         deltaY *= -1;
     }
     int epsilon = 2 * deltaY - deltaX;
-    int y = y0;
-    for (int x = x0; x <= x1; x++) {
+    float y = y0;
+    for (float x = std::floor(x0) + 0.5; x <= x1; x++) {
         rasterize_point(x, y, color);
         if (epsilon > 0) {
             y += iterStep;
@@ -294,14 +318,14 @@ void SoftwareRendererImp::rasterize_line_high_slope(float x0, float y0, float x1
     int deltaX = x1 - x0;
     int deltaY = y1 - y0;
     // Use x as the dependant variable
-    int iterStep = 1;
+    float iterStep = 1.0;
     if (deltaX < 0) {
-        iterStep = -1;
+        iterStep = -1.0;
         deltaX *= -1;
     }
     int epsilon = 2 * deltaX - deltaY;
-    int x = x0;
-    for (int y = y0; y <= y1; y++) {
+    float x = x0;
+    for (float y = std::floor(y0) + 0.5; y <= y1; y ++) {
         rasterize_point(x, y, color);
         if (epsilon > 0) {
             x += iterStep;
@@ -328,16 +352,14 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
     // Implement triangle rasterization
     // Create bounding box
     // Move by 0.5 to sample mid pixels
-    float xMin = std::floor(std::min({ x0, x1, x2 })) + 0.5;
-    float yMin = std::floor(std::min({ y0, y1, y2 })) + 0.5;
-    float xMax = std::ceil(std::max({ x0, x1, x2 })) + 0.5;
-    float yMax = std::ceil(std::max({ y0, y1, y2 })) + 0.5;
-
-
+    float xMin = std::floor(std::min({ x0, x1, x2 })) + (0.5 / sample_rate);
+    float yMin = std::floor(std::min({ y0, y1, y2 })) + (0.5 / sample_rate);
+    float xMax = std::ceil(std::max({ x0, x1, x2 })) + (0.5 / sample_rate);
+    float yMax = std::ceil(std::max({ y0, y1, y2 })) + (0.5 / sample_rate);
 
     // For testing points within the triangle's bounding box
-    for (float y = yMin; y <= yMax; y++) {
-        for (float x = xMin; x <= xMax; x++) {
+    for (float y = yMin; y <= yMax; y += (1.0 / sample_rate)) {
+        for (float x = xMin; x <= xMax; x += (1.0 / sample_rate)) {
             bool pointInside = true;
             // Test point against all three edges
             pointInside &= edgeFunction(x0, y0, x1, y1, x, y);
@@ -345,7 +367,7 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
             pointInside &= edgeFunction(x2, y2, x0, y0, x, y);
 
             if (pointInside)
-                rasterize_point(x, y, color);
+                sample_point(x, y, color);
         }
     }
 }
@@ -366,8 +388,32 @@ void SoftwareRendererImp::resolve( void ) {
   // Task 4: 
   // Implement supersampling
   // You may also need to modify other functions marked with "Task 4".
-  return;
+    for (int targetY = 0; targetY < target_h; targetY++) {
+        for (int targetX = 0; targetX < target_w; targetX++) {
+            int ySampleStart = targetY * sample_rate;
+            int ySampleEnd = ySampleStart + sample_rate;
+            int xSampleStart = targetX * sample_rate;
+            int xSampleEnd = xSampleStart + sample_rate;
+            Color avgColor(0.0, 0.0, 0.0, 0.0);
+            // Box sampling
+            int samples = 0;
+            for (int sampleY = ySampleStart; sampleY < ySampleEnd; sampleY++) {
+                for (int sampleX = xSampleStart; sampleX < xSampleEnd; sampleX++) {
+                    avgColor += sample_buffer[sampleY * sampleWidth + sampleX];
+                    samples++;
+                }
+            }
+            //cout << samples << "\n";
+            avgColor *= (1.0 / (sample_rate * sample_rate));
 
+            // Insert averaged color into rendering target
+            render_target[4 * (targetX + targetY * target_w)] = (uint8_t)(avgColor.r * 255);
+            render_target[4 * (targetX + targetY * target_w) + 1] = (uint8_t)(avgColor.g * 255);
+            render_target[4 * (targetX + targetY * target_w) + 2] = (uint8_t)(avgColor.b * 255);
+            render_target[4 * (targetX + targetY * target_w) + 3] = (uint8_t)(avgColor.a * 255);
+        }
+    }
+    std::fill(sample_buffer.begin(), sample_buffer.end(), Color(1.0, 1.0, 1.0, 1.0));
 }
 
 
